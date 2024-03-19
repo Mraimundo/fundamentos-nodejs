@@ -1,29 +1,15 @@
 import http from "node:http";
-import { randomUUID } from "node:crypto";
-import { Database } from "./middlewares/database.js";
-
-const database = new Database();
+import { routes } from "./routes.js";
 
 const server = http.createServer((req, res) => {
   const { method, url } = req;
 
-  if (method === "GET" && url === "/users") {
-    const users = database.select("users");
-    return res
-      .setHeader("Content-type", "application/json")
-      .end(JSON.stringify(users));
-  }
+  const route = routes.find((route) => {
+    return route.method === method && route.path === url;
+  });
 
-  if (method === "POST" && url === "/users") {
-    const user = {
-      id: randomUUID(),
-      name: "John Doe",
-      email: "exemple@gmail.com",
-    };
-
-    database.insert("users", user);
-
-    return res.writeHead(201).end();
+  if (route) {
+    return route.handler(req, res);
   }
 
   return res.writeHead(404).end();
